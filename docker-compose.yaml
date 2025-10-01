@@ -1,0 +1,61 @@
+services:
+  minio:
+    image: minio/minio:latest
+    env_file:
+      - .env
+    command: server /data
+    ports:
+      - "9000:9000"
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/ready"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:latest
+    env_file:
+      - .env
+    environment:
+      - MLFLOW_S3_ENDPOINT_URL=http://minio:9000
+      - AWS_ACCESS_KEY_ID=${MINIO_ROOT_USER}
+      - AWS_SECRET_ACCESS_KEY=${MINIO_ROOT_PASSWORD}
+    ports:
+      - "${MLFLOW_PORT}:${MLFLOW_PORT}"
+    volumes:
+      - ./mlflow_db:/mlflow/db
+    entrypoint:
+      - mlflow
+      - server
+      - --host
+      - ${MLFLOW_HOST}
+      - --port
+      - ${MLFLOW_PORT}
+      - --backend-store-uri
+      - sqlite:////mlflow/db/mlflow.db
+      - --default-artifact-root
+      - s3://${AWS_BUCKET_NAME}/
+      - --artifacts-destination
+      - s3://${AWS_BUCKET_NAME}/
+    depends_on:
+      - minio
+
+  server:
+    build: .
+    env_file:
+      - .env
+    environment:
+      - MLFLOW_TRACKING_URI=http://mlflow:${MLFLOW_PORT}
+      - MLFLOW_S3_ENDPOINT_URL=http://minio:9000
+      - AWS_ACCESS_KEY_ID=${MINIO_ROOT_USER}
+      - AWS_SECRET_ACCESS_KEY=${MINIO_ROOT_PASSWORD}
+    ports:
+      - "8080:8080"
+    depends_on:
+      - mlflow
+      - minio
+
+volumes:
+  minio-data:

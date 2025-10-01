@@ -1,0 +1,7 @@
+uvicorn
+mlflow
+minio
+fastapi[all]
+pandas
+python-dotenv
+scikit-learn
