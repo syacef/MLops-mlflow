@@ -4,10 +4,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.datasets import load_diabetes
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error
-from dotenv import load_dotenv
 import os
 
-load_dotenv()
 mlflow.set_tracking_uri('http://mlflow:'+ os.getenv('MLFLOW_PORT', '8000'))
 mlflow.set_experiment("diabetes_rf_experiment")
 

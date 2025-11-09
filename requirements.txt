@@ -5,3 +5,4 @@ fastapi[all]
 pandas
 python-dotenv
 scikit-learn
+boto3
